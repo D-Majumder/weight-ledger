@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — Weight Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-base:#14171c;
+    --bg-panel:#1b1f27;
+    --bg-panel-raised:#232833;
+    --line-grid:rgba(237,231,218,0.07);
+    --line-grid-strong:rgba(237,231,218,0.14);
+    --ink:#ede7da;
+    --ink-dim:#9aa1ad;
+    --ink-faint:#666d79;
+    --brass:#c9a24b;
+    --brass-soft:rgba(201,162,75,0.16);
+    --sage:#83987a;
+    --sage-soft:rgba(131,152,122,0.16);
+    --rust:#c1653f;
+    --rust-soft:rgba(193,101,63,0.16);
+    --radius:14px;
+    --shadow: 0 20px 50px -20px rgba(0,0,0,0.6);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(201,162,75,0.06), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(131,152,122,0.05), transparent 55%),
+      var(--bg-base);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding:40px 24px 80px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--brass);
+  }
+  header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:36px;
+    border-bottom:1px solid var(--line-grid-strong);
+    padding-bottom:20px;
+  }
+  h1.wordmark{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:34px;
+    letter-spacing:-0.01em;
+    margin:6px 0 0;
+  }
+  h1.wordmark em{font-style:italic; color:var(--brass); font-weight:500;}
+  .top-right{
+    text-align:right;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-dim);
+  }
+  .streak-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--brass-soft);
+    color:var(--brass);
+    border:1px solid rgba(201,162,75,0.3);
+    padding:5px 12px;
+    border-radius:999px;
+    font-size:12px;
+    margin-top:8px;
+  }
+  .streak-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--brass);}
+
+  /* Hero row */
+  .hero{
+    display:grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap:20px;
+    margin-bottom:20px;
+  }
+  @media (max-width:760px){ .hero{grid-template-columns:1fr;} }
+
+  .panel{
+    background:linear-gradient(180deg, var(--bg-panel-raised), var(--bg-panel));
+    border:1px solid var(--line-grid-strong);
+    border-radius:var(--radius);
+    padding:22px 24px;
+    box-shadow:var(--shadow);
+  }
+  .current-weight-panel .label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  .current-figure{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-top:6px;
+  }
+  .current-figure .num{
+    font-family:'Fraunces', serif;
+    font-size:64px;
+    font-weight:600;
+    line-height:1;
+    letter-spacing:-0.02em;
+  }
+  .current-figure .unit{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--ink-dim);
+    font-size:16px;
+  }
+  .delta-row{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  .delta-chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    padding:5px 10px;
+    border-radius:8px;
+    background:var(--bg-base);
+    border:1px solid var(--line-grid-strong);
+    color:var(--ink-dim);
+  }
+  .delta-chip b{color:var(--ink);}
+  .delta-chip.good{border-color:rgba(131,152,122,0.4); color:var(--sage);}
+  .delta-chip.good b{color:var(--sage);}
+  .delta-chip.bad{border-color:rgba(193,101,63,0.4); color:var(--rust);}
+  .delta-chip.bad b{color:var(--rust);}
+
+  .goal-line{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px dashed var(--line-grid-strong);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-dim);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .goal-line input{
+    width:70px;
+    background:var(--bg-base);
+    border:1px solid var(--line-grid-strong);
+    color:var(--brass);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    padding:4px 6px;
+    border-radius:6px;
+  }
+  .goal-line .save-goal{
+    background:none;
+    border:1px solid var(--line-grid-strong);
+    color:var(--ink-dim);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    padding:4px 9px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .goal-line .save-goal:hover{color:var(--brass); border-color:var(--brass);}
+
+  /* Quick add form */
+  .add-panel .label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin-bottom:14px;
+  }
+  form.add-form{display:flex; flex-direction:column; gap:12px;}
+  .field-row{display:flex; gap:10px;}
+  .field{flex:1; display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace;}
+  .field input{
+    background:var(--bg-base);
+    border:1px solid var(--line-grid-strong);
+    color:var(--ink);
+    padding:10px 12px;
+    border-radius:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+  }
+  .field input:focus{outline:none; border-color:var(--brass);}
+  .add-form button{
+    background:var(--brass);
+    color:#1b1508;
+    border:none;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:12px 16px;
+    border-radius:9px;
+    cursor:pointer;
+    transition:filter .15s ease, transform .15s ease;
+  }
+  .add-form button:hover{filter:brightness(1.08); transform:translateY(-1px);}
+  .add-form .note-input{width:100%;}
+  .form-msg{font-size:12px; font-family:'IBM Plex Mono', monospace; color:var(--sage); min-height:14px;}
+
+  /* Chart panel */
+  .chart-panel{margin-bottom:20px;}
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .panel-title{
+    font-family:'Fraunces', serif;
+    font-size:19px;
+    font-weight:600;
+  }
+  .range-toggle{display:flex; gap:6px;}
+  .range-toggle button{
+    background:none;
+    border:1px solid var(--line-grid-strong);
+    color:var(--ink-faint);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    padding:5px 10px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .range-toggle button.active{
+    border-color:var(--brass);
+    color:var(--brass);
+    background:var(--brass-soft);
+  }
+  .chart-svg-wrap{position:relative; margin-top:10px;}
+  .chart-empty{
+    padding:50px 10px;
+    text-align:center;
+    color:var(--ink-faint);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+  }
+  .tooltip{
+    position:absolute;
+    pointer-events:none;
+    background:#0e1015;
+    border:1px solid var(--brass);
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    padding:6px 9px;
+    border-radius:7px;
+    transform:translate(-50%,-115%);
+    white-space:nowrap;
+    opacity:0;
+    transition:opacity .1s ease;
+    z-index:5;
+  }
+  .tooltip b{color:var(--brass);}
+
+  /* Two column: calendar + stats */
+  .lower-grid{
+    display:grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap:20px;
+    margin-bottom:20px;
+    align-items:start;
+  }
+  @media (max-width:760px){ .lower-grid{grid-template-columns:1fr;} }
+
+  .cal-nav{display:flex; align-items:center; gap:10px;}
+  .cal-nav button{
+    background:none; border:1px solid var(--line-grid-strong);
+    color:var(--ink-dim); width:26px; height:26px; border-radius:7px;
+    cursor:pointer; font-family:'IBM Plex Mono', monospace;
+  }
+  .cal-nav button:hover{color:var(--brass); border-color:var(--brass);}
+  .cal-month-label{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-dim); min-width:96px; text-align:center;}
+
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+    margin-top:14px;
+  }
+  .cal-dow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--ink-faint);
+    text-align:center;
+    padding-bottom:2px;
+  }
+  .cal-cell{
+    aspect-ratio:1;
+    border-radius:8px;
+    background:var(--bg-base);
+    border:1px solid var(--line-grid);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    position:relative;
+    transition:border-color .12s ease;
+  }
+  .cal-cell:hover{border-color:var(--brass);}
+  .cal-cell.empty{visibility:hidden; cursor:default;}
+  .cal-cell.today{border-color:var(--brass); color:var(--brass);}
+  .cal-cell.logged{background:var(--sage-soft); color:var(--ink); border-color:rgba(131,152,122,0.35);}
+  .cal-cell .dnum{font-size:11px;}
+  .cal-cell .wnum{font-size:9px; color:var(--sage); margin-top:1px;}
+
+  /* Stats panel */
+  .stat-list{display:flex; flex-direction:column; gap:12px; margin-top:10px;}
+  .stat-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding-bottom:12px; border-bottom:1px solid var(--line-grid);
+  }
+  .stat-row:last-child{border-bottom:none; padding-bottom:0;}
+  .stat-row .k{font-size:12px; color:var(--ink-dim);}
+  .stat-row .v{font-family:'IBM Plex Mono', monospace; font-size:15px; color:var(--ink);}
+  .stat-row .v.brass{color:var(--brass);}
+  .stat-row .v.sage{color:var(--sage);}
+  .stat-row .v.rust{color:var(--rust);}
+
+  /* Log table */
+  .log-panel .panel-title{margin-bottom:14px;}
+  table.log-table{width:100%; border-collapse:collapse;}
+  table.log-table th{
+    text-align:left;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    padding:0 10px 8px;
+    border-bottom:1px solid var(--line-grid-strong);
+  }
+  table.log-table td{
+    padding:10px 10px;
+    border-bottom:1px solid var(--line-grid);
+    font-size:13px;
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  table.log-table td.note-cell{color:var(--ink-dim); font-family:'Inter', sans-serif; font-size:12px;}
+  table.log-table tr:last-child td{border-bottom:none;}
+  .row-actions button{
+    background:none; border:none; cursor:pointer;
+    color:var(--ink-faint); font-family:'IBM Plex Mono', monospace; font-size:12px;
+    margin-right:10px;
+  }
+  .row-actions button:hover{color:var(--rust);}
+  .log-scroll{max-height:320px; overflow-y:auto;}
+  .log-empty{padding:30px; text-align:center; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace; font-size:12px;}
+
+  footer{
+    text-align:center;
+    margin-top:30px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+  }
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--line-grid-strong); border-radius:4px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="eyebrow">personal measurement log</div>
+      <h1 class="wordmark">Ledger <em>/ weight</em></h1>
+    </div>
+    <div class="top-right">
+      <div id="todayDate"></div>
+      <div class="streak-badge"><span class="dot"></span><span id="streakText">0 day streak</span></div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="panel current-weight-panel">
+      <div class="label">Current</div>
+      <div class="current-figure">
+        <span class="num" id="currentWeight">—</span>
+        <span class="unit">kg</span>
+      </div>
+      <div class="delta-row" id="deltaRow"></div>
+      <div class="goal-line">
+        <span>Goal: <input type="number" step="0.1" id="goalInput" placeholder="75.0"> kg</span>
+        <button class="save-goal" id="saveGoalBtn">save</button>
+      </div>
+    </div>
+
+    <div class="panel add-panel">
+      <div class="label">Log an entry</div>
+      <form class="add-form" id="addForm">
+        <div class="field-row">
+          <div class="field">
+            <label for="dateInput">Date</label>
+            <input type="date" id="dateInput" required>
+          </div>
+          <div class="field">
+            <label for="weightInput">Weight (kg)</label>
+            <input type="number" step="0.1" min="1" id="weightInput" placeholder="76.4" required>
+          </div>
+        </div>
+        <div class="field note-input">
+          <label for="noteInput">Note (optional)</label>
+          <input type="text" id="noteInput" placeholder="fasted, post-leg day, etc.">
+        </div>
+        <button type="submit">Save entry</button>
+        <div class="form-msg" id="formMsg"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel chart-panel">
+    <div class="panel-head">
+      <div class="panel-title">Trend</div>
+      <div class="range-toggle" id="rangeToggle">
+        <button data-range="14">2W</button>
+        <button data-range="30" class="active">1M</button>
+        <button data-range="90">3M</button>
+        <button data-range="all">All</button>
+      </div>
+    </div>
+    <div class="chart-svg-wrap" id="chartWrap">
+      <div class="chart-empty">No entries yet — log your first weigh-in above.</div>
+    </div>
+  </div>
+
+  <div class="lower-grid">
+    <div class="panel cal-panel">
+      <div class="panel-head">
+        <div class="panel-title">Calendar</div>
+        <div class="cal-nav">
+          <button id="calPrev">‹</button>
+          <span class="cal-month-label" id="calMonthLabel"></span>
+          <button id="calNext">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <div class="panel stats-panel">
+      <div class="panel-title">Stats</div>
+      <div class="stat-list" id="statList"></div>
+    </div>
+  </div>
+
+  <div class="panel log-panel">
+    <div class="panel-title">Full log</div>
+    <div class="log-scroll">
+      <table class="log-table">
+        <thead>
+          <tr><th>Date</th><th>Weight</th><th>Note</th><th></th></tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+      <div class="log-empty" id="logEmpty" style="display:none;">Nothing logged yet.</div>
+    </div>
+  </div>
+
+  <footer>stored locally in this browser · nothing leaves this page</footer>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+(function(){
+  const STORE_KEY = 'ledger_weight_entries_v1';
+  const GOAL_KEY = 'ledger_weight_goal_v1';
+
+  function loadEntries(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+  function saveEntries(entries){
+    localStorage.setItem(STORE_KEY, JSON.stringify(entries));
+  }
+  function loadGoal(){
+    const raw = localStorage.getItem(GOAL_KEY);
+    return raw ? parseFloat(raw) : null;
+  }
+  function saveGoal(v){
+    localStorage.setItem(GOAL_KEY, String(v));
+  }
+
+  let entries = loadEntries(); // [{date:'YYYY-MM-DD', weight:Number, note:String}]
+  let goal = loadGoal();
+  let currentRange = '30';
+  let calCursor = new Date(); // month being viewed
+
+  const $ = (sel)=>document.querySelector(sel);
+  const fmtDate = (d)=> d.toISOString().slice(0,10);
+  const todayStr = fmtDate(new Date());
+
+  function sortedEntries(){
+    return [...entries].sort((a,b)=> a.date.localeCompare(b.date));
+  }
+
+  function upsertEntry(date, weight, note){
+    const idx = entries.findIndex(e=>e.date===date);
+    if(idx>=0){ entries[idx] = {date, weight, note}; }
+    else { entries.push({date, weight, note}); }
+    saveEntries(entries);
+  }
+
+  function deleteEntry(date){
+    entries = entries.filter(e=>e.date!==date);
+    saveEntries(entries);
+    renderAll();
+  }
+
+  // ---------- Header ----------
+  function renderHeader(){
+    const d = new Date();
+    $('#todayDate').textContent = d.toLocaleDateString(undefined,{weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+    const se = sortedEntries();
+    const loggedDates = new Set(se.map(e=>e.date));
+    let streak = 0;
+    let cursor = new Date();
+    // if today not logged, streak counts back from yesterday
+    if(!loggedDates.has(fmtDate(cursor))){
+      cursor.setDate(cursor.getDate()-1);
+    }
+    while(loggedDates.has(fmtDate(cursor))){
+      streak++;
+      cursor.setDate(cursor.getDate()-1);
+    }
+    $('#streakText').textContent = streak===1 ? '1 day streak' : streak+' day streak';
+  }
+
+  // ---------- Hero ----------
+  function renderHero(){
+    const se = sortedEntries();
+    const last = se[se.length-1];
+    $('#currentWeight').textContent = last ? last.weight.toFixed(1) : '—';
+
+    const deltaRow = $('#deltaRow');
+    deltaRow.innerHTML = '';
+
+    if(last){
+      const prev = se.length>1 ? se[se.length-2] : null;
+      if(prev){
+        const diff = last.weight - prev.weight;
+        const chip = document.createElement('div');
+        chip.className = 'delta-chip ' + (diff<0?'good':diff>0?'bad':'');
+        chip.innerHTML = `since last: <b>${diff>0?'+':''}${diff.toFixed(1)} kg</b>`;
+        deltaRow.appendChild(chip);
+      }
+      // 7-day change
+      const weekAgo = new Date(last.date);
+      weekAgo.setDate(weekAgo.getDate()-7);
+      const weekAgoStr = fmtDate(weekAgo);
+      const past = se.filter(e=>e.date<=weekAgoStr);
+      if(past.length){
+        const ref = past[past.length-1];
+        const diff7 = last.weight - ref.weight;
+        const chip = document.createElement('div');
+        chip.className = 'delta-chip ' + (diff7<0?'good':diff7>0?'bad':'');
+        chip.innerHTML = `7-day: <b>${diff7>0?'+':''}${diff7.toFixed(1)} kg</b>`;
+        deltaRow.appendChild(chip);
+      }
+      if(goal!==null && !isNaN(goal)){
+        const toGoal = last.weight - goal;
+        const chip = document.createElement('div');
+        chip.className = 'delta-chip ' + (Math.abs(toGoal)<0.05?'good':'');
+        chip.innerHTML = Math.abs(toGoal)<0.05
+          ? `at goal <b>✓</b>`
+          : `${toGoal>0?'above':'below'} goal by <b>${Math.abs(toGoal).toFixed(1)} kg</b>`;
+        deltaRow.appendChild(chip);
+      }
+    }
+
+    $('#goalInput').value = goal!==null && !isNaN(goal) ? goal : '';
+  }
+
+  $('#saveGoalBtn').addEventListener('click', ()=>{
+    const v = parseFloat($('#goalInput').value);
+    if(!isNaN(v) && v>0){
+      goal = v;
+      saveGoal(v);
+      renderAll();
+    }
+  });
+
+  // ---------- Add form ----------
+  $('#dateInput').value = todayStr;
+  $('#addForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const date = $('#dateInput').value;
+    const weight = parseFloat($('#weightInput').value);
+    const note = $('#noteInput').value.trim();
+    if(!date || isNaN(weight) || weight<=0) return;
+    upsertEntry(date, weight, note);
+    $('#formMsg').textContent = 'Saved ' + date + ' — ' + weight.toFixed(1) + ' kg';
+    $('#weightInput').value = '';
+    $('#noteInput').value = '';
+    $('#dateInput').value = todayStr;
+    renderAll();
+    setTimeout(()=>{ $('#formMsg').textContent=''; }, 2500);
+  });
+
+  // ---------- Chart ----------
+  function entriesForRange(){
+    const se = sortedEntries();
+    if(currentRange==='all') return se;
+    const days = parseInt(currentRange,10);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate()-days);
+    const cutoffStr = fmtDate(cutoff);
+    return se.filter(e=> e.date >= cutoffStr);
+  }
+
+  function niceStep(range){
+    if(range<=3) return 0.5;
+    if(range<=8) return 1;
+    if(range<=20) return 2;
+    return 5;
+  }
+
+  function renderChart(){
+    const wrap = $('#chartWrap');
+    const data = entriesForRange();
+    if(data.length===0){
+      wrap.innerHTML = '<div class="chart-empty">No entries in this range yet.</div>';
+      return;
+    }
+    if(data.length===1){
+      wrap.innerHTML = '<div class="chart-empty">Log one more entry to see a trend line.</div>';
+      return;
+    }
+
+    const W = wrap.clientWidth || 900;
+    const H = 300;
+    const padL = 46, padR = 20, padT = 18, padB = 30;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+
+    let weights = data.map(d=>d.weight);
+    if(goal!==null && !isNaN(goal)) weights = weights.concat([goal]);
+    let minW = Math.min(...weights);
+    let maxW = Math.max(...weights);
+    if(maxW-minW < 2){ const mid=(maxW+minW)/2; minW=mid-1; maxW=mid+1; }
+    const pad = (maxW-minW)*0.15;
+    minW -= pad; maxW += pad;
+    const range = maxW-minW;
+    const step = niceStep(range);
+
+    const x = (i)=> padL + (data.length===1 ? plotW/2 : (i/(data.length-1))*plotW);
+    const y = (w)=> padT + plotH - ((w-minW)/(maxW-minW))*plotH;
+
+    // gridlines / ruler ticks
+    let ticks = [];
+    let t = Math.ceil(minW/step)*step;
+    for(; t<=maxW; t+=step){ ticks.push(t); }
+
+    let gridSvg = '';
+    ticks.forEach(tv=>{
+      const ty = y(tv);
+      gridSvg += `<line x1="${padL}" y1="${ty}" x2="${W-padR}" y2="${ty}" stroke="var(--line-grid)" stroke-width="1"/>`;
+      gridSvg += `<line x1="${padL-6}" y1="${ty}" x2="${padL}" y2="${ty}" stroke="var(--ink-faint)" stroke-width="1"/>`;
+      gridSvg += `<text x="${padL-10}" y="${ty+3}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-faint)">${tv.toFixed(step<1?1:0)}</text>`;
+    });
+
+    // x labels (sparse)
+    const labelEvery = Math.max(1, Math.ceil(data.length/6));
+    let xLabels = '';
+    data.forEach((d,i)=>{
+      if(i%labelEvery===0 || i===data.length-1){
+        const dt = new Date(d.date+'T00:00:00');
+        const lbl = dt.toLocaleDateString(undefined,{month:'short', day:'numeric'});
+        xLabels += `<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-faint)">${lbl}</text>`;
+      }
+    });
+
+    // goal line
+    let goalSvg = '';
+    if(goal!==null && !isNaN(goal) && goal>=minW && goal<=maxW){
+      const gy = y(goal);
+      goalSvg = `<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="var(--sage)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="${W-padR}" y="${gy-6}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--sage)">goal ${goal.toFixed(1)}</text>`;
+    }
+
+    // path + area
+    const pathD = data.map((d,i)=> (i===0?'M':'L') + x(i).toFixed(1) + ',' + y(d.weight).toFixed(1)).join(' ');
+    const areaD = pathD + ` L ${x(data.length-1).toFixed(1)},${padT+plotH} L ${x(0).toFixed(1)},${padT+plotH} Z`;
+
+    let pointsSvg = '';
+    data.forEach((d,i)=>{
+      const isLast = i===data.length-1;
+      pointsSvg += `<circle class="pt" data-i="${i}" cx="${x(i).toFixed(1)}" cy="${y(d.weight).toFixed(1)}" r="${isLast?5:3.4}" fill="${isLast?'var(--brass)':'var(--bg-base)'}" stroke="var(--brass)" stroke-width="2"/>`;
+    });
+
+    const svg = `
+      <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block; overflow:visible;">
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#c9a24b" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="#c9a24b" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        ${gridSvg}
+        ${goalSvg}
+        <path d="${areaD}" fill="url(#areaGrad)" stroke="none"/>
+        <path d="${pathD}" fill="none" stroke="var(--brass)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        ${pointsSvg}
+        ${xLabels}
+      </svg>`;
+    wrap.innerHTML = svg;
+
+    const tooltip = $('#tooltip');
+    wrap.querySelectorAll('.pt').forEach(pt=>{
+      pt.style.cursor='pointer';
+      pt.addEventListener('mousemove', (ev)=>{
+        const i = parseInt(pt.getAttribute('data-i'),10);
+        const d = data[i];
+        const dt = new Date(d.date+'T00:00:00');
+        const lbl = dt.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
+        tooltip.innerHTML = `${lbl}<br><b>${d.weight.toFixed(1)} kg</b>${d.note?('<br>'+d.note):''}`;
+        const rect = wrap.getBoundingClientRect();
+        tooltip.style.left = (ev.clientX - rect.left) + 'px';
+        tooltip.style.top = (ev.clientY - rect.top) + 'px';
+        tooltip.style.opacity = '1';
+      });
+      pt.addEventListener('mouseleave', ()=>{ tooltip.style.opacity='0'; });
+    });
+  }
+
+  $('#rangeToggle').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    currentRange = btn.getAttribute('data-range');
+    document.querySelectorAll('#rangeToggle button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderChart();
+  });
+
+  window.addEventListener('resize', ()=>{ renderChart(); });
+
+  // ---------- Calendar ----------
+  function renderCalendar(){
+    const grid = $('#calGrid');
+    grid.innerHTML = '';
+    const year = calCursor.getFullYear();
+    const month = calCursor.getMonth();
+    $('#calMonthLabel').textContent = calCursor.toLocaleDateString(undefined,{month:'long', year:'numeric'});
+
+    ['S','M','T','W','T','F','S'].forEach(d=>{
+      const el = document.createElement('div');
+      el.className='cal-dow'; el.textContent=d;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(year, month, 1);
+    const startOffset = firstDay.getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    const entryMap = {};
+    entries.forEach(e=> entryMap[e.date]=e);
+
+    for(let i=0;i<startOffset;i++){
+      const el = document.createElement('div');
+      el.className='cal-cell empty';
+      grid.appendChild(el);
+    }
+    for(let day=1; day<=daysInMonth; day++){
+      const dateStr = fmtDate(new Date(year, month, day));
+      const el = document.createElement('div');
+      const logged = entryMap[dateStr];
+      el.className = 'cal-cell' + (logged?' logged':'') + (dateStr===todayStr?' today':'');
+      el.innerHTML = `<span class="dnum">${day}</span>` + (logged?`<span class="wnum">${logged.weight.toFixed(1)}</span>`:'');
+      el.addEventListener('click', ()=>{
+        $('#dateInput').value = dateStr;
+        if(logged){ $('#weightInput').value = logged.weight; $('#noteInput').value = logged.note||''; }
+        $('#weightInput').focus();
+        window.scrollTo({top:0, behavior:'smooth'});
+      });
+      grid.appendChild(el);
+    }
+  }
+  $('#calPrev').addEventListener('click', ()=>{ calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()-1, 1); renderCalendar(); });
+  $('#calNext').addEventListener('click', ()=>{ calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()+1, 1); renderCalendar(); });
+
+  // ---------- Stats ----------
+  function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+
+  function renderStats(){
+    const list = $('#statList');
+    list.innerHTML = '';
+    const se = sortedEntries();
+    const rows = [];
+
+    rows.push(['Entries logged', se.length]);
+
+    if(se.length){
+      const last7 = se.filter(e=>{
+        const d = new Date(e.date+'T00:00:00');
+        const diff = (new Date()-d)/(1000*60*60*24);
+        return diff<=7;
+      });
+      rows.push(['7-day average', last7.length ? avg(last7.map(e=>e.weight)).toFixed(1)+' kg' : '—']);
+
+      const first = se[0], last = se[se.length-1];
+      const totalChange = last.weight-first.weight;
+      rows.push(['Total change', (totalChange>0?'+':'')+totalChange.toFixed(1)+' kg', totalChange<0?'sage':(totalChange>0?'rust':'')]);
+
+      const heaviest = se.reduce((a,b)=> b.weight>a.weight?b:a);
+      const lightest = se.reduce((a,b)=> b.weight<a.weight?b:a);
+      rows.push(['Highest logged', heaviest.weight.toFixed(1)+' kg']);
+      rows.push(['Lowest logged', lightest.weight.toFixed(1)+' kg']);
+
+      if(goal!==null && !isNaN(goal)){
+        const remaining = last.weight-goal;
+        rows.push(['Remaining to goal', Math.abs(remaining).toFixed(1)+' kg', Math.abs(remaining)<0.05?'sage':'brass']);
+      }
+    }
+
+    rows.forEach(([k,v,cls])=>{
+      const row = document.createElement('div');
+      row.className='stat-row';
+      row.innerHTML = `<span class="k">${k}</span><span class="v ${cls||''}">${v}</span>`;
+      list.appendChild(row);
+    });
+  }
+
+  // ---------- Log table ----------
+  function renderLog(){
+    const body = $('#logBody');
+    body.innerHTML = '';
+    const se = [...sortedEntries()].reverse();
+    $('#logEmpty').style.display = se.length ? 'none' : 'block';
+    se.forEach(e=>{
+      const tr = document.createElement('tr');
+      const dt = new Date(e.date+'T00:00:00');
+      const lbl = dt.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric', year:'numeric'});
+      tr.innerHTML = `
+        <td>${lbl}</td>
+        <td>${e.weight.toFixed(1)} kg</td>
+        <td class="note-cell">${e.note ? e.note.replace(/</g,'&lt;') : ''}</td>
+        <td class="row-actions">
+          <button data-act="edit" data-date="${e.date}">edit</button>
+          <button data-act="del" data-date="${e.date}">delete</button>
+        </td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const date = btn.getAttribute('data-date');
+        if(btn.getAttribute('data-act')==='del'){
+          if(confirm('Delete entry for '+date+'?')) deleteEntry(date);
+        } else {
+          const e = entries.find(x=>x.date===date);
+          if(e){
+            $('#dateInput').value = e.date;
+            $('#weightInput').value = e.weight;
+            $('#noteInput').value = e.note||'';
+            window.scrollTo({top:0, behavior:'smooth'});
+            $('#weightInput').focus();
+          }
+        }
+      });
+    });
+  }
+
+  function renderAll(){
+    renderHeader();
+    renderHero();
+    renderChart();
+    renderCalendar();
+    renderStats();
+    renderLog();
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
