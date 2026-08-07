@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://intouchprimarycare.com/wp-content/uploads/2025/08/stalled-weight-loss-shutterstock_2268197393.jpg" alt="Maha Kumbh Mela" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 0 15px rgba(255,140,0,0.3);">
+  <img src="https://intouchprimarycare.com/wp-content/uploads/2025/08/stalled-weight-loss-shutterstock_2268197393.jpg" alt="Stressed Girl" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 0 15px rgba(255,140,0,0.3);">
 </p>
 
 <p align="center">
