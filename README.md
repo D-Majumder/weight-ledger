@@ -72,8 +72,8 @@ There's no backend, no sign-up, and no analytics. Every entry is written straigh
 
 ### Option 2 — Clone the repo
 ```bash
-git clone https://github.com/D-Majumder/Weight_Ledger.git
-cd Weight_Ledger
+git clone https://github.com/D-Majumder/weight-ledger.git
+cd weight-ledger
 open index.html   # or just double-click it in your file explorer
 ```
 
@@ -83,7 +83,7 @@ Ledger is a static file, so any static host works: GitHub Pages, Netlify, Cloudf
 # Example: GitHub Pages
 # 1. Push this repo to GitHub
 # 2. Settings → Pages → Deploy from branch → main / root
-# 3. Visit https://d-majumder.github.io/Weight_Ledger/
+# 3. Visit https://d-majumder.github.io/weight-ledger/
 ```
 > Note: data is stored per-browser. If you host it and use it from multiple devices, each browser keeps its own separate history.
 
