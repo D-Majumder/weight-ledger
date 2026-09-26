@@ -125,37 +125,37 @@
 
   /* Navigation Tabs */
   .nav-tabs{
-    display:flex;
-    gap:6px;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:4px;
     background:var(--bg-panel);
-    padding:5px;
-    border-radius:12px;
+    padding:4px;
+    border-radius:10px;
     border:1px solid var(--line-grid-strong);
-    margin-bottom:20px;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
+    margin-bottom:18px;
     width:100%;
+    overflow:hidden;
   }
-  .nav-tabs::-webkit-scrollbar{display:none;}
   .nav-tab{
-    flex:1 0 auto;
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:6px;
+    gap:5px;
     background:transparent;
     border:none;
     color:var(--ink-dim);
     font-family:'Inter', sans-serif;
-    font-size:13px;
+    font-size:12px;
     font-weight:500;
-    padding:10px 14px;
-    border-radius:8px;
+    padding:8px 6px;
+    border-radius:7px;
     cursor:pointer;
     transition:all .18s ease;
     white-space:nowrap;
     touch-action:manipulation;
+    min-width:0;
+    width:100%;
+    overflow:hidden;
   }
   .nav-tab:hover{color:var(--ink); background:rgba(237,231,218,0.04);}
   .nav-tab.active{
@@ -171,11 +171,20 @@
   }
   .nav-tab .tab-badge{
     font-family:'IBM Plex Mono', monospace;
-    font-size:10px;
-    padding:2px 6px;
+    font-size:9px;
+    padding:1px 5px;
     border-radius:999px;
     background:rgba(237,231,218,0.06);
     color:var(--ink-faint);
+  }
+  .tab-text-short{display:none;}
+
+  @media (max-width: 640px){
+    .nav-tabs{padding:3px; gap:3px; margin-bottom:14px;}
+    .nav-tab{padding:7px 2px; font-size:11px; gap:3px;}
+    .tab-text-full{display:none;}
+    .tab-text-short{display:inline;}
+    .nav-tab .tab-badge{display:none;}
   }
 
   /* Panels Common */
@@ -1193,15 +1202,21 @@
   <!-- Navigation Tabs -->
   <nav class="nav-tabs">
     <button class="nav-tab active" id="tabGym" data-tab="paneGym">
-      <span>🏋️ Gym Timetable & Tracker</span>
-      <span class="tab-badge" id="tabGymBadge">Today: Active</span>
+      <span>🏋️</span>
+      <span class="tab-text-full">Gym Tracker</span>
+      <span class="tab-text-short">Gym</span>
+      <span class="tab-badge" id="tabGymBadge">Active</span>
     </button>
     <button class="nav-tab" id="tabWeight" data-tab="paneWeight">
-      <span>⚖️ Weight Log</span>
+      <span>⚖️</span>
+      <span class="tab-text-full">Weight Log</span>
+      <span class="tab-text-short">Weight</span>
       <span class="tab-badge" id="tabWeightBadge">— kg</span>
     </button>
     <button class="nav-tab" id="tabOverview" data-tab="paneOverview">
-      <span>📊 Unified Overview</span>
+      <span>📊</span>
+      <span class="tab-text-full">Overview</span>
+      <span class="tab-text-short">Overview</span>
     </button>
   </nav>
 
