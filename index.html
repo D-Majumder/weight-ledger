@@ -674,6 +674,69 @@
   .muscle-pill.fullbody{background:rgba(201,162,75,0.15); color:var(--brass); border-color:rgba(201,162,75,0.3);}
   .muscle-pill.rest{background:rgba(102,109,121,0.15); color:var(--ink-faint); border-color:rgba(102,109,121,0.3);}
 
+  /* Gamification Level & Points Card */
+  .level-card{
+    background:linear-gradient(135deg, rgba(201,162,75,0.1), rgba(78,168,222,0.08), var(--bg-panel-card));
+    border:1px solid rgba(201,162,75,0.35);
+    border-radius:12px;
+    padding:13px 16px;
+    margin-bottom:16px;
+    width:100%;
+    box-shadow:0 4px 18px -6px rgba(201,162,75,0.15);
+  }
+  .level-card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .level-tag-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    background:var(--brass-soft);
+    color:var(--brass);
+    border:1px solid rgba(201,162,75,0.4);
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:6px;
+  }
+  .level-points-val{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    font-weight:600;
+    color:var(--cyan);
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .level-progress-meta{
+    display:flex;
+    justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-dim);
+    margin-bottom:6px;
+  }
+  .level-bar-track{
+    background:var(--bg-base);
+    border:1px solid var(--line-grid-strong);
+    border-radius:999px;
+    height:8px;
+    overflow:hidden;
+    width:100%;
+  }
+  .level-bar-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--brass), var(--cyan));
+    border-radius:999px;
+    transition:width 0.4s ease;
+  }
+
   /* Analytics Grid for Workout & Attendance */
   .gym-kpi-grid{
     display:grid;
@@ -1195,6 +1258,8 @@
       <div class="badges-row">
         <div class="streak-badge"><span class="dot"></span><span id="streakText">0 day streak</span></div>
         <div class="streak-badge workout-badge"><span class="dot"></span><span id="workoutStreakText">0 workout streak</span></div>
+        <div class="streak-badge" style="background:rgba(201,162,75,0.18); color:var(--brass); border-color:rgba(201,162,75,0.4);"><span class="dot" style="background:var(--brass);"></span><span id="levelBadgeText">👑 Level 1 (0/26)</span></div>
+        <div class="streak-badge" style="background:rgba(78,168,222,0.18); color:var(--cyan); border-color:rgba(78,168,222,0.4);"><span class="dot" style="background:var(--cyan);"></span><span id="xpBadgeText">⚡ 0 pts</span></div>
       </div>
     </div>
   </header>
@@ -1241,6 +1306,28 @@
       <div class="today-banner-actions">
         <button class="btn-action btn-complete" id="bannerQuickCompleteBtn">✓ Complete Today's Workout</button>
         <button class="btn-secondary" id="bannerCustomizeSplitBtn">⚙️ Edit Timetable</button>
+      </div>
+    </div>
+
+    <!-- Level & Points Progress Card (Gamification Feature) -->
+    <div class="level-card" id="levelCard">
+      <div class="level-card-head">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="level-tag-badge" id="levelTagBadge">👑 LEVEL 1</span>
+          <span style="font-weight:600; font-size:13px; color:var(--ink);" id="levelRankTitle">Bronze Lifter 🥉</span>
+        </div>
+        <div class="level-points-val">
+          <span>⚡</span>
+          <span id="levelPointsVal">0 pts</span>
+          <span style="font-size:10px; color:var(--ink-faint); font-weight:normal;">(+100/workout)</span>
+        </div>
+      </div>
+      <div class="level-progress-meta">
+        <span id="levelProgressText">0 / 26 Workouts completed</span>
+        <span id="levelNextText">26 to Level 2</span>
+      </div>
+      <div class="level-bar-track">
+        <div class="level-bar-fill" id="levelBarFill" style="width:0%;"></div>
       </div>
     </div>
 
@@ -1982,6 +2069,8 @@
     const muscleGroups = getSelectedMuscles();
     const skipReason = status === 'skipped' ? $('#skipReasonSelect').value : '';
 
+    const beforeCompleted = gymLogs.filter(l => l.status === 'completed').length;
+
     const newLog = {
       date,
       status,
@@ -2000,10 +2089,18 @@
     }
     saveGymLogs(gymLogs);
 
+    const afterCompleted = gymLogs.filter(l => l.status === 'completed').length;
+    const isLevelUp = (status === 'completed' && afterCompleted > beforeCompleted && afterCompleted % 26 === 0 && afterCompleted > 0);
+    const newLvl = Math.floor(afterCompleted / 26) + 1;
+
     const msg = $('#gymFormMsg');
     if(status === 'completed'){
       msg.style.color = 'var(--sage-bright)';
-      msg.textContent = `✓ Great job! Marked ${date} as Completed.`;
+      if(isLevelUp){
+        msg.innerHTML = `🎉 <b>LEVEL UP! Reached Level ${newLvl}!</b> (${afterCompleted} Workouts Done) +500 Bonus Points! 🏆`;
+      } else {
+        msg.textContent = `✓ Great job! Marked ${date} as Completed (+100 pts) ⚡`;
+      }
     } else if(status === 'skipped'){
       msg.style.color = 'var(--rust-bright)';
       msg.textContent = `✕ Marked ${date} as Absent / Skipped.`;
@@ -2011,7 +2108,7 @@
       msg.style.color = 'var(--ink-dim)';
       msg.textContent = `☕ Marked ${date} as Rest Day.`;
     }
-    setTimeout(() => { msg.textContent = ''; }, 3000);
+    setTimeout(() => { msg.textContent = ''; }, 3500);
 
     renderAllGym();
   }
@@ -2023,7 +2120,7 @@
   }
 
   // =========================================================================
-  // ATTENDANCE & CONSISTENCY ANALYTICS
+  // ATTENDANCE & CONSISTENCY ANALYTICS + GAMIFIED LEVEL UP (Every 26 Workouts)
   // =========================================================================
   function calculateGymAnalytics(){
     const sorted = [...gymLogs].sort((a,b) => a.date.localeCompare(b.date));
@@ -2093,6 +2190,26 @@
     }
     bestStreak = Math.max(bestStreak, currentStreak);
 
+    // Gamification: Level up every 26 completed workouts & points
+    const WORKOUTS_PER_LEVEL = 26;
+    const XP_PER_WORKOUT = 100;
+    const level = Math.floor(completedCount / WORKOUTS_PER_LEVEL) + 1;
+    const currentLevelWorkouts = completedCount % WORKOUTS_PER_LEVEL;
+    const remainingToNextLevel = WORKOUTS_PER_LEVEL - currentLevelWorkouts;
+    const levelProgressPct = Math.round((currentLevelWorkouts / WORKOUTS_PER_LEVEL) * 100);
+    const totalXP = (completedCount * XP_PER_WORKOUT) + (currentStreak * 25);
+
+    const rankTitles = [
+      "Bronze Lifter 🥉",
+      "Iron Warrior 🥈",
+      "Gold Beast 🥇",
+      "Diamond Titan 💎",
+      "Gym Warlord 👑",
+      "Mythic Champion 🔥",
+      "Immortal Legend ⚡"
+    ];
+    const rankTitle = rankTitles[Math.min(level - 1, rankTitles.length - 1)] || `Master Lv.${level} 👑`;
+
     return {
       completedCount,
       skippedCount,
@@ -2103,13 +2220,40 @@
       bestStreak,
       totalHours: (totalMinutes / 60).toFixed(1),
       avgDuration: completedCount > 0 ? Math.round(totalMinutes / completedCount) : 0,
-      muscleCounts
+      muscleCounts,
+      level,
+      currentLevelWorkouts,
+      remainingToNextLevel,
+      levelProgressPct,
+      totalXP,
+      rankTitle
     };
   }
 
   function renderGymAnalytics(){
     const stats = calculateGymAnalytics();
 
+    // Gamification Level & XP card update
+    const tagBadge = $('#levelTagBadge');
+    if(tagBadge) tagBadge.textContent = `👑 LEVEL ${stats.level}`;
+    const rankEl = $('#levelRankTitle');
+    if(rankEl) rankEl.textContent = stats.rankTitle;
+    const ptsEl = $('#levelPointsVal');
+    if(ptsEl) ptsEl.textContent = `${stats.totalXP.toLocaleString()} pts`;
+    const progTxt = $('#levelProgressText');
+    if(progTxt) progTxt.textContent = `${stats.currentLevelWorkouts} / 26 Workouts (Level ${stats.level})`;
+    const nextTxt = $('#levelNextText');
+    if(nextTxt) nextTxt.textContent = `${stats.remainingToNextLevel} to Level ${stats.level + 1}`;
+    const barFill = $('#levelBarFill');
+    if(barFill) barFill.style.width = `${stats.levelProgressPct}%`;
+
+    // Header badges
+    const lvlBadge = $('#levelBadgeText');
+    if(lvlBadge) lvlBadge.textContent = `👑 Lvl ${stats.level} (${stats.currentLevelWorkouts}/26)`;
+    const xpBadge = $('#xpBadgeText');
+    if(xpBadge) xpBadge.textContent = `⚡ ${stats.totalXP.toLocaleString()} pts`;
+
+    // Top KPIs
     $('#kpiDoneCount').textContent = stats.completedCount;
     $('#kpiDoneSub').textContent = `${stats.completedCount} completed sessions`;
 
@@ -2168,12 +2312,14 @@
     const statList = $('#gymStatList');
     statList.innerHTML = '';
     const rows = [
+      ['Current Gym Level', `Level ${stats.level} (${stats.rankTitle})`, 'brass'],
+      ['Earned Points (XP)', `${stats.totalXP.toLocaleString()} pts`, 'cyan'],
+      ['Next Level Up In', `${stats.remainingToNextLevel} workouts`],
       ['Total Workouts Done', `${stats.completedCount} days`, 'sage'],
       ['Total Days Skipped / Absent', `${stats.skippedCount} days`, 'rust'],
       ['Rest Days Recorded', `${stats.restCount} days`],
       ['Overall Consistency', `${stats.consistencyRate}%`, 'brass'],
-      ['Current Active Streak', `${stats.currentStreak} days`, 'cyan'],
-      ['Longest Streak', `${stats.bestStreak} days`],
+      ['Active Streak', `${stats.currentStreak} days`, 'cyan'],
       ['Total Time Trained', `${stats.totalHours} hours`],
       ['Avg Session Length', `${stats.avgDuration} mins`]
     ];
@@ -2806,11 +2952,11 @@
     }
 
     const gStats = calculateGymAnalytics();
-    $('#ovWorkoutsDone').textContent = `${gStats.completedCount} Days`;
-    $('#ovWorkoutRate').textContent = `${gStats.consistencyRate}% consistency`;
+    $('#ovWorkoutsDone').textContent = `${gStats.completedCount} Days (Lvl ${gStats.level})`;
+    $('#ovWorkoutRate').textContent = `${gStats.consistencyRate}% · ${gStats.totalXP.toLocaleString()} pts`;
     $('#ovWorkoutsSkipped').textContent = `${gStats.skippedCount} Days`;
     $('#ovGymHours').textContent = `${gStats.totalHours} hrs`;
-    $('#ovAvgDuration').textContent = `Avg: ${gStats.avgDuration} min/session`;
+    $('#ovAvgDuration').textContent = `Avg: ${gStats.avgDuration}m · ${gStats.remainingToNextLevel} to Lvl ${gStats.level + 1}`;
   }
 
   // =========================================================================
