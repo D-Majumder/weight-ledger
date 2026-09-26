@@ -1540,10 +1540,6 @@
           <div class="panel-title">Unified Fitness Ledger</div>
           <div class="panel-subtitle">Combined view of bodyweight trends and workout consistency</div>
         </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-secondary" id="exportDataBtn">📥 Export Data (JSON)</button>
-          <button class="btn-secondary" id="loadDemoBtn">⚡ Load Demo Data</button>
-        </div>
       </div>
       
       <div class="gym-kpi-grid" style="margin-top:10px;">
@@ -1566,15 +1562,6 @@
           <div class="kpi-label">Total Time in Gym</div>
           <div class="kpi-value cyan" id="ovGymHours">0 hrs</div>
           <div class="kpi-sub" id="ovAvgDuration">Avg: 0 min/session</div>
-        </div>
-      </div>
-
-      <div style="background:var(--bg-panel-card); border:1px solid var(--line-grid-strong); border-radius:12px; padding:16px; margin-top:14px;">
-        <div class="eyebrow">How Gym Attendance Tracking Works</div>
-        <div style="font-size:12px; color:var(--ink-dim); line-height:1.6; margin-top:6px;">
-          1. <strong>Weekly Split Timetable:</strong> Configure your routine for each day (e.g. Mon = Chest, Tue = Back, Wed = Legs, etc.).<br>
-          2. <strong>Daily Tracking:</strong> When you complete your workout, click <strong>Mark as Completed</strong>. If you skip a scheduled workout, click <strong>Mark as Absent / Skipped</strong>.<br>
-          3. <strong>Attendance Analytics:</strong> View your exact consistency score, total completed days, and total absent days anytime to keep yourself accountable!
         </div>
       </div>
     </div>
@@ -3000,8 +2987,10 @@
       renderWeightCalendar();
     });
 
-    $('#exportDataBtn').addEventListener('click', exportDataAsJSON);
-    $('#loadDemoBtn').addEventListener('click', loadDemoData);
+    const expBtn = $('#exportDataBtn');
+    if(expBtn) expBtn.addEventListener('click', exportDataAsJSON);
+    const demoBtn = $('#loadDemoBtn');
+    if(demoBtn) demoBtn.addEventListener('click', loadDemoData);
 
     $('#clearAllDataBtn').addEventListener('click', (e) => {
       e.preventDefault();
